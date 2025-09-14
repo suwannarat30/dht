@@ -1,16 +1,13 @@
-// backend/be.js (Polling + MongoDB logging)
+// backend/be.js
 const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
-const router = require('./routes/router');
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===== Mongo config via env =====
-// Use process.env to access environment variables loaded by dotenv
 const MONGO_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME;
 const COLLECTION = process.env.COLLECTION_NAME;
@@ -18,10 +15,10 @@ const COLLECTION = process.env.COLLECTION_NAME;
 let mongoClient;
 let readingsCol;
 
-// connect only once on boot
+// Connect MongoDB once
 async function initMongo() {
   if (!MONGO_URI) {
-    console.warn('MONGODB_URI not set. Mongo logging will be skipped.');
+    console.warn('MONGODB_URI not set. Mongo logging skipped.');
     return;
   }
   mongoClient = new MongoClient(MONGO_URI);
@@ -33,12 +30,12 @@ async function initMongo() {
 }
 initMongo().catch(err => console.error('Mongo init error:', err));
 
-// ===== CORS (adjust origin to your real domain) =====
+// ===== CORS =====
 const ALLOW_ORIGINS = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
-  'https://dht-git-main-suwannarat30s-projects.vercel.app/', // Your Vercel frontend
+  'https://dht-git-main-suwannarat30s-projects.vercel.app/', // ปรับตาม frontend
 ]);
 
 app.use(cors({
@@ -47,8 +44,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Store the latest values in memory (for fast frontend display)
-// and as a fallback if the DB is not ready
+// ===== Store latest readings in memory =====
 let latest = { temperature: null, humidity: null, at: null };
 
 // ===== ESP32 POSTs data here =====
@@ -66,41 +62,30 @@ app.post('/temperature', async (req, res) => {
 
   console.log('Received:', latest);
 
-  // Log to Mongo if connected
   if (readingsCol) {
-    try {
-      await readingsCol.insertOne(doc);
-    } catch (e) {
-      console.error('Mongo insert error:', e);
-    }
+    try { await readingsCol.insertOne(doc); } 
+    catch (e) { console.error('Mongo insert error:', e); }
   }
 
   res.json({ ok: true });
 });
 
-// ===== frontend polls for latest data =====
+// ===== frontend polls latest data =====
 app.get('/data', async (_req, res) => {
-  // If DB is available, get the "latest item" from DB (prevents value reset on app restart)
   try {
     if (readingsCol) {
       const last = await readingsCol.find().sort({ at: -1 }).limit(1).next();
-      if (last) {
-        return res.json({
-          temperature: last.temperature,
-          humidity: last.humidity,
-          at: last.at.getTime(),
-        });
-      }
+      if (last) return res.json({
+        temperature: last.temperature,
+        humidity: last.humidity,
+        at: last.at.getTime(),
+      });
     }
-  } catch (e) {
-    console.error('Mongo read error:', e);
-  }
-  // fallback: value from memory
+  } catch (e) { console.error('Mongo read error:', e); }
   res.json(latest);
 });
 
-// ===== history endpoint for historical graph =====
-// Example: GET /history?limit=200
+// ===== history endpoint =====
 app.get('/history', async (req, res) => {
   try {
     if (!readingsCol) return res.json([]);
@@ -109,18 +94,14 @@ app.get('/history', async (req, res) => {
       .sort({ at: -1 })
       .limit(limit)
       .toArray();
-    // Reorder from oldest to newest for the graph
     res.json(docs.reverse());
-  } catch (e) {
-    console.error('/history error:', e);
-    res.json([]);
-  }
+  } catch (e) { console.error('/history error:', e); res.json([]); }
 });
 
 // Health check
 app.get('/health', (_req, res) => res.send('ok'));
 
-// Close connection gracefully on shutdown
+// Graceful shutdown
 process.on('SIGTERM', async () => {
   try { await mongoClient?.close(); } catch {}
   process.exit(0);
