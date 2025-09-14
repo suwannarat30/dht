@@ -1,25 +1,29 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const WebSocket = require('ws'); // นำเข้าไลบรารี ws ทั้งหมด
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // Render จะกำหนด PORT เอง
 
-// สร้าง WebSocket server
-const wss = new WebSocket.Server({ port: 3001 }); // ใช้ WebSocket.Server
+app.use(cors());
+app.use(bodyParser.json());
 
-app.use(cors()); // อนุญาตการเข้าถึงจาก Frontend
-app.use(bodyParser.json()); // ใช้เพียงครั้งเดียวเท่านั้น
+// สร้าง HTTP server เดียวสำหรับทั้ง Express และ WS
+const server = http.createServer(app);
 
-// HTTP endpoint สำหรับรับข้อมูลจาก ESP32
+// ผูก WebSocket เข้ากับ HTTP server เดียวกัน
+const wss = new WebSocket.Server({ server });
+
+// HTTP endpoint สำหรับ ESP32
 app.post('/temperature', (req, res) => {
   const data = req.body;
   console.log('Received:', data);
 
-  // ส่งข้อมูลไปยังทุก client ที่เชื่อมต่อผ่าน WebSocket
+  // ส่งข้อมูลไปยังทุก client ที่เชื่อมต่อผ่าน WS
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) { // เปลี่ยนเป็น WebSocket.OPEN
+    if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(data));
     }
   });
@@ -27,10 +31,7 @@ app.post('/temperature', (req, res) => {
   res.send('OK');
 });
 
-app.listen(port, () => {
-  console.log(`Backend listening on port ${port}`);
-});
-
-wss.on('listening', () => {
-  console.log('WebSocket server listening on port 3001');
+// Start server (Express + WS)
+server.listen(port, () => {
+  console.log(`Backend + WebSocket running on port ${port}`);
 });
