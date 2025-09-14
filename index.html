@@ -105,9 +105,8 @@
 <div class="status-message" id="status-message">Connecting...</div>
 
 <script>
-const wsUrl = 'wss://dht-dun.vercel.app'; // URL WebSocket (ถ้ามี server จริง)
-const apiUrl = 'https://dht-yv99.onrender.com';
-let wsConnected = false;
+const apiUrl = 'https://dht-yv99.onrender.com'; // server จริง
+const POST_INTERVAL_MS = 2000; // polling ทุก 2 วินาที
 
 // ฟังก์ชันอัพเดตค่า Temperature/Humidity
 function updateValues(data) {
@@ -136,36 +135,9 @@ async function fetchData() {
     }
 }
 
-// พยายามเชื่อมต่อ WebSocket
-try {
-    const ws = new WebSocket(wsUrl);
-    ws.onopen = () => {
-        wsConnected = true;
-        document.getElementById('status-message').textContent = 'Connected via WebSocket';
-    };
-    ws.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            updateValues(data);
-        } catch (err) {
-            console.error('WS JSON parse error:', err);
-        }
-    };
-    ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
-    };
-    ws.onclose = () => {
-        wsConnected = false;
-        console.log('WebSocket closed, falling back to HTTP polling');
-        setInterval(fetchData, 2000);
-    };
-} catch (err) {
-    console.error('WebSocket init error:', err);
-    setInterval(fetchData, 2000);
-}
-
-// เรียก fetch ครั้งแรกทันที (fallback)
-if (!wsConnected) fetchData();
+// เรียก fetch ทุก 2 วินาที
+fetchData();
+setInterval(fetchData, POST_INTERVAL_MS);
 </script>
 </body>
 </html>
