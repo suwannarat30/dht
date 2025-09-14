@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "be.js",
   "scripts": {
-    "start": "node backend/be.js"
+    "start": "node be.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
