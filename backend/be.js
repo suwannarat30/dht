@@ -5,7 +5,9 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+// ✅ เปิด CORS สำหรับทุก origin
+app.use(cors({ origin: '*' }));
+
 app.use(bodyParser.json());
 
 // เก็บค่าล่าสุดจาก ESP32

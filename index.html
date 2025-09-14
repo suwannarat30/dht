@@ -41,7 +41,7 @@
 const apiUrl = 'https://dht-yv99.onrender.com/temperature'; // backend URL
 const POLL_INTERVAL_MS = 2000;
 
-// อัพเดตค่าบนหน้าเว็บ
+// ฟังก์ชันอัพเดตค่าบนหน้าเว็บ
 function updateValues(data) {
     if (data.temperature !== undefined) document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
     if (data.humidity !== undefined) document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
@@ -59,6 +59,7 @@ async function fetchData() {
     } catch (err) {
         console.error('Fetch error:', err);
         // ถ้า fetch fail → ไม่ทำอะไร
+        document.getElementById('status-message').textContent = 'Failed to fetch data';
     }
 }
 
