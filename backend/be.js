@@ -20,17 +20,21 @@ let readingsCol;
 // connect MongoDB ตอนบูต
 async function initMongo() {
   if (!MONGO_URI) {
-    console.warn('MONGODB_URI not set. Mongo logging skipped.');
+    console.warn('[MongoDB] MONGODB_URI not set. Mongo logging skipped.');
     return;
   }
-  mongoClient = new MongoClient(MONGO_URI);
-  await mongoClient.connect();
-  const db = mongoClient.db(DB_NAME);
-  readingsCol = db.collection(COLLECTION);
-  await readingsCol.createIndex({ at: -1 });
-  console.log(`Connected to MongoDB → db: ${DB_NAME}, col: ${COLLECTION}`);
+  try {
+    mongoClient = new MongoClient(MONGO_URI);
+    await mongoClient.connect();
+    const db = mongoClient.db(DB_NAME);
+    readingsCol = db.collection(COLLECTION);
+    await readingsCol.createIndex({ at: -1 });
+    console.log(`[MongoDB] Connected → db: ${DB_NAME}, col: ${COLLECTION}`);
+  } catch (err) {
+    console.error('[MongoDB] Connection error:', err);
+  }
 }
-initMongo().catch(err => console.error('Mongo init error:', err));
+initMongo();
 
 // ===== CORS =====
 const ALLOW_ORIGINS = new Set([
@@ -40,17 +44,23 @@ const ALLOW_ORIGINS = new Set([
   'https://dht-git-main-suwannarat30s-projects.vercel.app',
 ]);
 
-app.use(cors({
-  origin: (origin, cb) => cb(null, !origin || ALLOW_ORIGINS.has(origin)),
-}));
+app.use(cors({ origin: (origin, cb) => cb(null, !origin || ALLOW_ORIGINS.has(origin)) }));
 app.use(bodyParser.json());
 
-// ===== HTTP server (Express + WS) =====
+// ===== HTTP server + WebSocket =====
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // เก็บค่าล่าสุด
 let latest = { temperature: null, humidity: null, at: null };
+
+// log client WS connect/disconnect
+wss.on('connection', ws => {
+  console.log(`[WebSocket] Client connected (total: ${wss.clients.size})`);
+  ws.on('close', () => {
+    console.log(`[WebSocket] Client disconnected (total: ${wss.clients.size})`);
+  });
+});
 
 // ===== ESP32 POST =====
 app.post('/temperature', async (req, res) => {
@@ -59,13 +69,13 @@ app.post('/temperature', async (req, res) => {
   humidity    = Number(humidity);
 
   if (!Number.isFinite(temperature) || !Number.isFinite(humidity)) {
-    return res.status(400).json({ error: 'Invalid payload' });
+    return res.status(400).json({ error: 'Invalid payload: need number temperature & humidity' });
   }
 
   const doc = { temperature, humidity, at: new Date() };
   latest = { temperature, humidity, at: Date.now() };
 
-  console.log('Received:', latest);
+  console.log(`[ESP32] Received → temp: ${temperature}, hum: ${humidity}, at: ${new Date(latest.at).toLocaleString()}`);
 
   // broadcast ผ่าน WS
   wss.clients.forEach(client => {
@@ -78,8 +88,9 @@ app.post('/temperature', async (req, res) => {
   if (readingsCol) {
     try {
       await readingsCol.insertOne(doc);
+      console.log('[MongoDB] Inserted new reading.');
     } catch (e) {
-      console.error('Mongo insert error:', e);
+      console.error('[MongoDB] Insert error:', e);
     }
   }
 
@@ -92,15 +103,11 @@ app.get('/data', async (_req, res) => {
     if (readingsCol) {
       const last = await readingsCol.find().sort({ at: -1 }).limit(1).next();
       if (last) {
-        return res.json({
-          temperature: last.temperature,
-          humidity: last.humidity,
-          at: last.at.getTime(),
-        });
+        return res.json({ temperature: last.temperature, humidity: last.humidity, at: last.at.getTime() });
       }
     }
   } catch (e) {
-    console.error('Mongo read error:', e);
+    console.error('[MongoDB] Read error:', e);
   }
   res.json(latest);
 });
@@ -110,13 +117,10 @@ app.get('/history', async (req, res) => {
   try {
     if (!readingsCol) return res.json([]);
     const limit = Math.min(Number(req.query.limit || 200), 2000);
-    const docs = await readingsCol.find({})
-      .sort({ at: -1 })
-      .limit(limit)
-      .toArray();
+    const docs = await readingsCol.find({}).sort({ at: -1 }).limit(limit).toArray();
     res.json(docs.reverse());
   } catch (e) {
-    console.error('/history error:', e);
+    console.error('[MongoDB] /history error:', e);
     res.json([]);
   }
 });
@@ -132,5 +136,5 @@ process.on('SIGTERM', async () => {
 
 // Start server
 server.listen(port, () => {
-  console.log(`Backend + WS + Mongo running on port ${port}`);
+  console.log(`[Server] Backend + WS + Mongo running on port ${port}`);
 });
