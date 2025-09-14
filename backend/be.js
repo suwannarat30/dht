@@ -57,8 +57,8 @@ app.post('/temperature', async (req, res) => {
     return res.status(400).json({ error: 'Invalid payload: need number temperature & humidity' });
   }
 
-  const doc = { temperature, humidity, at: new Date() };
-  latest = { temperature, humidity, at: doc.at };
+  const doc = { temperature, humidity };
+  latest = { temperature, humidity};
 
   console.log('Received:', latest);
 
