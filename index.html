@@ -106,18 +106,13 @@
     <div class="status-message" id="status-message">Connecting...</div>
 
     <script>
-        // WebSocket connection
-        const ws = new WebSocket('wss://dht-yv99.onrender.com');
+        const apiUrl = 'https://dht-dun.vercel.app/api/data';
 
-        ws.onopen = () => {
-            console.log('Connected to WebSocket server');
-            document.getElementById('status-message').textContent = 'Connection successful';
-        };
-
-        ws.onmessage = (event) => {
+        async function fetchData() {
             try {
-                const data = JSON.parse(event.data);
-                console.log('Received data:', data);
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
 
                 if (data.temperature !== undefined) {
                     document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
@@ -125,20 +120,17 @@
                 if (data.humidity !== undefined) {
                     document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
                 }
+
+                document.getElementById('status-message').textContent = 'Data updated';
             } catch (err) {
-                console.error('Error parsing JSON:', err);
+                console.error('Fetch error:', err);
+                document.getElementById('status-message').textContent = 'Error fetching data';
             }
-        };
+        }
 
-        ws.onerror = (error) => {
-            console.error('WebSocket Error:', error);
-            document.getElementById('status-message').textContent = 'An error occurred during connection';
-        };
-
-        ws.onclose = () => {
-            console.log('Disconnected from WebSocket server');
-            document.getElementById('status-message').textContent = 'Connection closed';
-        };
+        // Fetch data every 2 seconds
+        fetchData(); // Fetch first time immediately
+        setInterval(fetchData, 2000);
     </script>
 </body>
 </html>
