@@ -10,22 +10,22 @@ const port = process.env.PORT || 3000; // Render จะกำหนด PORT เ�
 app.use(cors());
 app.use(bodyParser.json());
 
-// เก็บค่าล่าสุดสำหรับ HTTP GET fallback
+// เก็บค่าล่าสุดสำหรับ GET fallback
 let latestData = { temperature: 0, humidity: 0 };
 
-// สร้าง HTTP server เดียวสำหรับทั้ง Express และ WS
+// สร้าง HTTP server เดียวสำหรับ Express + WS
 const server = http.createServer(app);
 
-// ผูก WebSocket เข้ากับ HTTP server เดียวกัน
+// สร้าง WebSocket server
 const wss = new WebSocket.Server({ server });
 
-// HTTP endpoint สำหรับ ESP32 POST
+// POST endpoint สำหรับ ESP32
 app.post('/temperature', (req, res) => {
   const data = req.body;
   latestData = data; // เก็บค่าล่าสุด
   console.log('Received:', data);
 
-  // ส่งข้อมูลไป WebSocket client ทุกตัวที่เชื่อมต่อ
+  // ส่งข้อมูลไป WebSocket clients
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(data));
@@ -35,12 +35,12 @@ app.post('/temperature', (req, res) => {
   res.send('OK');
 });
 
-// HTTP GET endpoint สำหรับหน้าเว็บ fetch fallback
+// GET endpoint สำหรับหน้าเว็บ fetch fallback
 app.get('/temperature', (req, res) => {
   res.json(latestData);
 });
 
-// Start server (Express + WebSocket)
+// Start server
 server.listen(port, () => {
   console.log(`Backend + WebSocket running on port ${port}`);
 });

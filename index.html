@@ -19,72 +19,15 @@
         background-color: #f0f4f8;
         color: #333;
     }
-
-    h1 {
-        color: #2c3e50;
-        font-weight: 700;
-        margin-bottom: 30px;
-    }
-
-    .container {
-        display: flex;
-        gap: 25px;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .card {
-        background-color: #ffffff;
-        border-radius: 16px;
-        padding: 2.5em 3em;
-        text-align: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        min-width: 150px;
-    }
-
-    .card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
-
-    .label {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        font-size: 1.2em;
-        font-weight: 600;
-        color: #7f8c8d;
-        margin-bottom: 10px;
-    }
-
-    .value {
-        font-size: 4.5em;
-        font-weight: 700;
-        margin: 0;
-    }
-
-    .unit {
-        display: block;
-        font-size: 1.5em;
-        color: #95a5a6;
-        margin-top: -10px;
-    }
-
+    h1 { color: #2c3e50; font-weight: 700; margin-bottom: 30px; }
+    .container { display: flex; gap: 25px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .card { background-color: #ffffff; border-radius: 16px; padding: 2.5em 3em; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 150px; }
+    .label { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1.2em; font-weight: 600; color: #7f8c8d; margin-bottom: 10px; }
+    .value { font-size: 4.5em; font-weight: 700; margin: 0; }
+    .unit { display: block; font-size: 1.5em; color: #95a5a6; margin-top: -10px; }
     #temperature-value { color: #e74c3c; }
     #humidity-value { color: #3498db; }
-
-    .status-message {
-        margin-top: 2em;
-        font-size: 1em;
-        color: #555;
-        background-color: #ecf0f1;
-        padding: 10px 20px;
-        border-radius: 8px;
-    }
-
+    .status-message { margin-top: 2em; font-size: 1em; color: #555; background-color: #ecf0f1; padding: 10px 20px; border-radius: 8px; }
     .emoji { font-size: 1.2em; }
 </style>
 </head>
@@ -105,10 +48,10 @@
 <div class="status-message" id="status-message">Connecting...</div>
 
 <script>
-const apiUrl = 'https://dht-yv99.onrender.com'; // server จริง
-const POST_INTERVAL_MS = 2000; // polling ทุก 2 วินาที
+const wsUrl = 'wss://dht-yv99.onrender.com'; // WebSocket server จาก backend
+let ws;
 
-// ฟังก์ชันอัพเดตค่า Temperature/Humidity
+// อัพเดตค่าจาก backend
 function updateValues(data) {
     if (data.temperature !== undefined) {
         document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
@@ -118,26 +61,37 @@ function updateValues(data) {
     }
 }
 
-// ฟังก์ชัน polling HTTP
-async function fetchData() {
-    try {
-        const res = await fetch(apiUrl);
-        if (!res.ok) throw new Error('Network response was not ok');
-        const data = await res.json();
-        updateValues(data);
-        document.getElementById('status-message').textContent = 'Data updated (HTTP polling)';
-    } catch (err) {
-        console.error('Fetch error:', err);
-        // ใช้ mock data ถ้า fetch fail
-        const mockData = { temperature: 27.5, humidity: 61.3 };
-        updateValues(mockData);
-        document.getElementById('status-message').textContent = 'Using mock data';
-    }
+// เชื่อมต่อ WebSocket
+function initWebSocket() {
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+        document.getElementById('status-message').textContent = 'Connected to ESP';
+        console.log('WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            updateValues(data);
+        } catch (err) {
+            console.error('WebSocket JSON parse error:', err);
+        }
+    };
+
+    ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+    };
+
+    ws.onclose = () => {
+        console.log('WebSocket closed. Reconnecting in 2s...');
+        document.getElementById('status-message').textContent = 'Disconnected. Reconnecting...';
+        setTimeout(initWebSocket, 2000);
+    };
 }
 
-// เรียก fetch ทุก 2 วินาที
-fetchData();
-setInterval(fetchData, POST_INTERVAL_MS);
+// เริ่มเชื่อมต่อ
+initWebSocket();
 </script>
 </body>
 </html>
