@@ -2,7 +2,6 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,7 +34,7 @@ const ALLOW_ORIGINS = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
-  'https://dht-git-main-suwannarat30s-projects.vercel.app', // Vercel frontend ของคุณ
+  'https://dht-git-main-suwannarat30s-projects.vercel.app/', // Vercel frontend ของคุณ
 ]);
 
 app.use(cors({
@@ -45,6 +44,7 @@ app.use(cors({
 app.use(express.json());
 
 // เก็บค่าล่าสุดไว้ในหน่วยความจำ (ให้ frontend แสดงเร็วๆ ได้)
+// และเป็น fallback ถ้า DB ยังไม่พร้อม
 let latest = { temperature: null, humidity: null, at: null };
 
 // ===== ESP32 POST ข้อมูลเข้ามาที่นี่ =====
@@ -76,6 +76,7 @@ app.post('/temperature', async (req, res) => {
 
 // ===== frontend polling ล่าสุด =====
 app.get('/data', async (_req, res) => {
+  // ถ้ามี DB ดึง “รายการล่าสุด” จาก DB (กันค่า reset เมื่อแอพรีสตาร์ท)
   try {
     if (readingsCol) {
       const last = await readingsCol.find().sort({ at: -1 }).limit(1).next();
@@ -90,10 +91,12 @@ app.get('/data', async (_req, res) => {
   } catch (e) {
     console.error('Mongo read error:', e);
   }
+  // fallback: ค่าจากหน่วยความจำ
   res.json(latest);
 });
 
 // ===== history endpoint สำหรับกราฟย้อนหลัง =====
+// ตัวอย่าง: GET /history?limit=200
 app.get('/history', async (req, res) => {
   try {
     if (!readingsCol) return res.json([]);
@@ -102,7 +105,8 @@ app.get('/history', async (req, res) => {
       .sort({ at: -1 })
       .limit(limit)
       .toArray();
-    res.json(docs.reverse()); // เรียงเวลาเก่า→ใหม่
+    // เรียงเวลาเก่า->ใหม่ให้กราฟอ่านง่าย
+    res.json(docs.reverse());
   } catch (e) {
     console.error('/history error:', e);
     res.json([]);
