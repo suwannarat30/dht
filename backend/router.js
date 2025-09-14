@@ -2,6 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
+const router = require('./routes/router');
 
 // ===== ESP32 POSTs data here =====
 router.post('/temperature', async (req, res) => {
