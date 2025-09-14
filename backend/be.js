@@ -35,7 +35,7 @@ const ALLOW_ORIGINS = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
-  'https://dht-git-main-suwannarat30s-projects.vercel.app/', // ปรับตาม frontend
+  'https://dht-git-main-suwannarat30s-projects.vercel.app/',
 ]);
 
 app.use(cors({
@@ -57,8 +57,8 @@ app.post('/temperature', async (req, res) => {
     return res.status(400).json({ error: 'Invalid payload: need number temperature & humidity' });
   }
 
-  const doc = { temperature, humidity};
-  latest = { temperature, humidity};
+  const doc = { temperature, humidity, at: new Date() };
+  latest = { temperature, humidity, at: doc.at };
 
   console.log('Received:', latest);
 
@@ -98,13 +98,19 @@ app.get('/history', async (req, res) => {
   } catch (e) { console.error('/history error:', e); res.json([]); }
 });
 
-// Health check
+// ===== Hello World route =====
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+});
+
+// ===== Health check =====
 app.get('/health', (_req, res) => res.send('ok'));
 
-// Graceful shutdown
+// ===== Graceful shutdown =====
 process.on('SIGTERM', async () => {
   try { await mongoClient?.close(); } catch {}
   process.exit(0);
 });
 
+// ===== Start server =====
 app.listen(PORT, () => console.log(`Backend listening on ${PORT}`));
