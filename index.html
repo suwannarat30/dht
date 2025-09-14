@@ -8,20 +8,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f0f4f8;
-        color: #333;
-    }
+    body { font-family: 'Poppins', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f4f8; color: #333; }
     h1 { color: #2c3e50; font-weight: 700; margin-bottom: 30px; }
     .container { display: flex; gap: 25px; justify-content: center; align-items: center; flex-wrap: wrap; }
-    .card { background-color: #ffffff; border-radius: 16px; padding: 2.5em 3em; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 150px; }
+    .card { background-color: #fff; border-radius: 16px; padding: 2.5em 3em; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 150px; }
     .label { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1.2em; font-weight: 600; color: #7f8c8d; margin-bottom: 10px; }
     .value { font-size: 4.5em; font-weight: 700; margin: 0; }
     .unit { display: block; font-size: 1.5em; color: #95a5a6; margin-top: -10px; }
@@ -48,50 +38,33 @@
 <div class="status-message" id="status-message">Connecting...</div>
 
 <script>
-const wsUrl = 'wss://dht-yv99.onrender.com'; // WebSocket server จาก backend
-let ws;
+const apiUrl = 'https://dht-yv99.onrender.com/temperature'; // backend URL
+const POLL_INTERVAL_MS = 2000;
 
-// อัพเดตค่าจาก backend
+// อัพเดตค่าบนหน้าเว็บ
 function updateValues(data) {
-    if (data.temperature !== undefined) {
-        document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
-    }
-    if (data.humidity !== undefined) {
-        document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
+    if (data.temperature !== undefined) document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
+    if (data.humidity !== undefined) document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
+}
+
+// polling HTTP
+async function fetchData() {
+    try {
+        const res = await fetch(apiUrl);
+        if (res.status === 204) return; // ยังไม่มีข้อมูล
+        if (!res.ok) throw new Error('Network response not ok');
+        const data = await res.json();
+        updateValues(data);
+        document.getElementById('status-message').textContent = 'Data updated';
+    } catch (err) {
+        console.error('Fetch error:', err);
+        // ถ้า fetch fail → ไม่ทำอะไร
     }
 }
 
-// เชื่อมต่อ WebSocket
-function initWebSocket() {
-    ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-        document.getElementById('status-message').textContent = 'Connected to ESP';
-        console.log('WebSocket connected');
-    };
-
-    ws.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            updateValues(data);
-        } catch (err) {
-            console.error('WebSocket JSON parse error:', err);
-        }
-    };
-
-    ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
-    };
-
-    ws.onclose = () => {
-        console.log('WebSocket closed. Reconnecting in 2s...');
-        document.getElementById('status-message').textContent = 'Disconnected. Reconnecting...';
-        setTimeout(initWebSocket, 2000);
-    };
-}
-
-// เริ่มเชื่อมต่อ
-initWebSocket();
+// เรียกครั้งแรก + polling ทุก 2 วินาที
+fetchData();
+setInterval(fetchData, POLL_INTERVAL_MS);
 </script>
 </body>
 </html>
