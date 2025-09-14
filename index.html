@@ -1,136 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temperature and Humidity Monitor</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f4f8;
-            color: #333;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temperature and Humidity Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f4f8;
+        color: #333;
+    }
 
-        h1 {
-            color: #2c3e50;
-            font-weight: 700;
-            margin-bottom: 30px;
-        }
+    h1 {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 30px;
+    }
 
-        .container {
-            display: flex;
-            gap: 25px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+    .container {
+        display: flex;
+        gap: 25px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
 
-        .card {
-            background-color: #ffffff;
-            border-radius: 16px;
-            padding: 2.5em 3em;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            min-width: 150px;
-        }
+    .card {
+        background-color: #ffffff;
+        border-radius: 16px;
+        padding: 2.5em 3em;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        min-width: 150px;
+    }
 
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
 
-        .label {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #7f8c8d;
-            margin-bottom: 10px;
-        }
+    .label {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.2em;
+        font-weight: 600;
+        color: #7f8c8d;
+        margin-bottom: 10px;
+    }
 
-        .value {
-            font-size: 4.5em;
-            font-weight: 700;
-            margin: 0;
-        }
+    .value {
+        font-size: 4.5em;
+        font-weight: 700;
+        margin: 0;
+    }
 
-        .unit {
-            display: block;
-            font-size: 1.5em;
-            color: #95a5a6;
-            margin-top: -10px;
-        }
+    .unit {
+        display: block;
+        font-size: 1.5em;
+        color: #95a5a6;
+        margin-top: -10px;
+    }
 
-        #temperature-value { color: #e74c3c; }
-        #humidity-value { color: #3498db; }
+    #temperature-value { color: #e74c3c; }
+    #humidity-value { color: #3498db; }
 
-        .status-message {
-            margin-top: 2em;
-            font-size: 1em;
-            color: #555;
-            background-color: #ecf0f1;
-            padding: 10px 20px;
-            border-radius: 8px;
-        }
+    .status-message {
+        margin-top: 2em;
+        font-size: 1em;
+        color: #555;
+        background-color: #ecf0f1;
+        padding: 10px 20px;
+        border-radius: 8px;
+    }
 
-        .emoji { font-size: 1.2em; }
-    </style>
+    .emoji { font-size: 1.2em; }
+</style>
 </head>
 <body>
-    <h1>Current Weather Conditions</h1>
-    <div class="container">
-        <div class="card">
-            <div class="label">Temperature <span class="emoji">🌡️</span></div>
-            <div class="value" id="temperature-value">--</div>
-            <span class="unit">°C</span>
-        </div>
-        <div class="card">
-            <div class="label">Humidity <span class="emoji">💧</span></div>
-            <div class="value" id="humidity-value">--</div>
-            <span class="unit">%</span>
-        </div>
+<h1>Current Weather Conditions</h1>
+<div class="container">
+    <div class="card">
+        <div class="label">Temperature <span class="emoji">🌡️</span></div>
+        <div class="value" id="temperature-value">--</div>
+        <span class="unit">°C</span>
     </div>
-    <div class="status-message" id="status-message">Connecting...</div>
+    <div class="card">
+        <div class="label">Humidity <span class="emoji">💧</span></div>
+        <div class="value" id="humidity-value">--</div>
+        <span class="unit">%</span>
+    </div>
+</div>
+<div class="status-message" id="status-message">Connecting...</div>
 
-    <script>
-        const apiUrl = 'https://dht-dun.vercel.app/api/data';
+<script>
+const wsUrl = 'wss://dht-dun.vercel.app'; // URL WebSocket (ถ้ามี server จริง)
+const apiUrl = 'https://dht-dun.vercel.app/api/data'; // fallback HTTP polling
+let wsConnected = false;
 
-        async function fetchData() {
-            try {
-                const res = await fetch(apiUrl);
-                if (!res.ok) throw new Error('Network response was not ok');
-                const data = await res.json();
+// ฟังก์ชันอัพเดตค่า Temperature/Humidity
+function updateValues(data) {
+    if (data.temperature !== undefined) {
+        document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
+    }
+    if (data.humidity !== undefined) {
+        document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
+    }
+}
 
-                if (data.temperature !== undefined) {
-                    document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
-                }
-                if (data.humidity !== undefined) {
-                    document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
-                }
+// ฟังก์ชัน polling HTTP
+async function fetchData() {
+    try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+        updateValues(data);
+        document.getElementById('status-message').textContent = 'Data updated (HTTP polling)';
+    } catch (err) {
+        console.error('Fetch error:', err);
+        // ใช้ mock data ถ้า fetch fail
+        const mockData = { temperature: 27.5, humidity: 61.3 };
+        updateValues(mockData);
+        document.getElementById('status-message').textContent = 'Using mock data';
+    }
+}
 
-                document.getElementById('status-message').textContent = 'Data updated';
-            } catch (err) {
-                console.error('Fetch error:', err);
-                document.getElementById('status-message').textContent = 'Error fetching data';
-            }
+// พยายามเชื่อมต่อ WebSocket
+try {
+    const ws = new WebSocket(wsUrl);
+    ws.onopen = () => {
+        wsConnected = true;
+        document.getElementById('status-message').textContent = 'Connected via WebSocket';
+    };
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            updateValues(data);
+        } catch (err) {
+            console.error('WS JSON parse error:', err);
         }
-
-        // Fetch data every 2 seconds
-        fetchData(); // Fetch first time immediately
+    };
+    ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+    };
+    ws.onclose = () => {
+        wsConnected = false;
+        console.log('WebSocket closed, falling back to HTTP polling');
         setInterval(fetchData, 2000);
-    </script>
+    };
+} catch (err) {
+    console.error('WebSocket init error:', err);
+    setInterval(fetchData, 2000);
+}
+
+// เรียก fetch ครั้งแรกทันที (fallback)
+if (!wsConnected) fetchData();
+</script>
 </body>
 </html>
