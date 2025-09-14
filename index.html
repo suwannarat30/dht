@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temperature and Humidity Monitor</title>
-    <!-- Google Fonts for a fresh look -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,76 +12,81 @@
         body {
             font-family: 'Poppins', sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f4f8;
             margin: 0;
-            flex-direction: column;
+            background-color: #f0f4f8;
             color: #333;
         }
+
+        h1 {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
         .container {
             display: flex;
             gap: 25px;
             justify-content: center;
             align-items: center;
-            padding: 2.5em;
+            flex-wrap: wrap;
         }
+
         .card {
-            text-align: center;
-            padding: 2.5em 3.5em;
             background-color: #ffffff;
             border-radius: 16px;
+            padding: 2.5em 3em;
+            text-align: center;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            min-width: 150px;
         }
+
         .card:hover {
             transform: translateY(-8px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
+
         .label {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #7f8c8d;
-            margin-bottom: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #7f8c8d;
+            margin-bottom: 10px;
         }
+
         .value {
             font-size: 4.5em;
             font-weight: 700;
             margin: 0;
         }
+
         .unit {
+            display: block;
             font-size: 1.5em;
             color: #95a5a6;
             margin-top: -10px;
-            display: block;
         }
-        #temperature-value {
-            color: #e74c3c;
-        }
-        #humidity-value {
-            color: #3498db;
-        }
+
+        #temperature-value { color: #e74c3c; }
+        #humidity-value { color: #3498db; }
+
         .status-message {
             margin-top: 2em;
-            color: #555;
             font-size: 1em;
+            color: #555;
             background-color: #ecf0f1;
             padding: 10px 20px;
             border-radius: 8px;
         }
-        .emoji {
-            font-size: 1.2em;
-        }
+
+        .emoji { font-size: 1.2em; }
     </style>
 </head>
 <body>
@@ -101,49 +106,39 @@
     <div class="status-message" id="status-message">Connecting...</div>
 
     <script>
-        // Create WebSocket connection
+        // WebSocket connection
         const ws = new WebSocket('wss://dht-yv99.onrender.com');
 
-        // When connected
         ws.onopen = () => {
             console.log('Connected to WebSocket server');
             document.getElementById('status-message').textContent = 'Connection successful';
         };
 
-        // When a message is received from the Backend
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
                 console.log('Received data:', data);
 
-                // Check and update temperature value
                 if (data.temperature !== undefined) {
                     document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
                 }
-
-                // Check and update humidity value
                 if (data.humidity !== undefined) {
                     document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
                 }
-
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
+            } catch (err) {
+                console.error('Error parsing JSON:', err);
             }
         };
 
-        // When an error occurs
         ws.onerror = (error) => {
             console.error('WebSocket Error:', error);
             document.getElementById('status-message').textContent = 'An error occurred during connection';
         };
 
-        // When the connection is closed
         ws.onclose = () => {
             console.log('Disconnected from WebSocket server');
             document.getElementById('status-message').textContent = 'Connection closed';
         };
-
     </script>
-
 </body>
 </html>
